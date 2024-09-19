@@ -7,12 +7,28 @@ import (
 	"os"
 	"log"
 	"strings"
+	"sort"
+	"strconv"
 )
 
-func filteredByShelf(books [][]string, shelfName string)(bks [][]string){
+func askChatGpt(){
+	//client := resty.New()
+	//resp, err := client.R().
+	//	EnableTrace().
+	//	Get("https://httpbin.org/get")
+//
+	//if err == nil {
+	//	fmt.Println(resp.Time())
+	//} else {
+	//	fmt.Println(err)
+	//}
+}
+
+func filteredByShelf(books [][]string, shelfName string)(bks map[string]int){
+	bks = make(map[string]int)
 	for _, bk := range books {
-		if Contains(bk[16], shelfName) {
-			bks = append(bks, bk)
+		if strings.Contains(bk[18], shelfName) {
+			bks[bk[1]], _ = strconv.Atoi(bk[7])
 		}
 	}
 	return bks
@@ -35,21 +51,13 @@ func csvData(filePath string)(records [][]string) {
 }
 
 func main() {
-	//client := resty.New()
-	
 	r := csvData("./goodreads_library_export.csv")
-	
 
-	r = filteredByShelf(r, "looking-for")
-	fmt.Println(r)
+	rMap := filteredByShelf(r, "read")
 
-	//resp, err := client.R().
-	//	EnableTrace().
-	//	Get("https://httpbin.org/get")
-//
-	//if err == nil {
-	//	fmt.Println(resp.Time())
-	//} else {
-	//	fmt.Println(err)
-	//}
+	sort.Slice(rMap, func(i, j string) bool {
+        return rMap[i].Value > rMap[j].Value
+    })
+
+	fmt.Println(rMap)
 }
