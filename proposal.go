@@ -1,33 +1,29 @@
 package main
 
 import (
-	"fmt"
-	//"github.com/go-resty/resty/v2"
 	"encoding/csv"
 	"os"
 	"log"
 	"strings"
 	"sort"
 	"strconv"
+	"marky/openai"
 )
 
-func askChatGpt(){
-	//client := resty.New()
-	//resp, err := client.R().
-	//	EnableTrace().
-	//	Get("https://httpbin.org/get")
-//
-	//if err == nil {
-	//	fmt.Println(resp.Time())
-	//} else {
-	//	fmt.Println(err)
-	//}
+func sortBooksByRating(bks map[string]int)(arr []string){
+	arr = make([]string, 0, len(bks))
+	for key := range bks {
+		arr = append(arr, key)
+	}
+
+	sort.Slice(arr, func(i, j int) bool { return bks[arr[i]] > bks[arr[j]] })
+	return arr
 }
 
-func filteredByShelf(books [][]string, shelfName string)(bks map[string]int){
+func filteredByShelfAndRating(books [][]string, shelfName string)(bks map[string]int){
 	bks = make(map[string]int)
 	for _, bk := range books {
-		if strings.Contains(bk[18], shelfName) {
+		if (strings.Contains(bk[18], shelfName) && (bk[7] == "5")) {
 			bks[bk[1]], _ = strconv.Atoi(bk[7])
 		}
 	}
@@ -53,11 +49,11 @@ func csvData(filePath string)(records [][]string) {
 func main() {
 	r := csvData("./goodreads_library_export.csv")
 
-	rMap := filteredByShelf(r, "read")
+	rMap := filteredByShelfAndRating(r, "read")
 
-	sort.Slice(rMap, func(i, j string) bool {
-        return rMap[i].Value > rMap[j].Value
-    })
+	rMapArr := sortBooksByRating(rMap)
 
-	fmt.Println(rMap)
+	topBooksStr := strings.Join(rMapArr[:], ",")
+	//fmt.Printf(topBooksStr)
+	openai.AskChatGpt(topBooksStr)
 }
