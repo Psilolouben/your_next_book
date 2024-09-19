@@ -1,22 +1,31 @@
 package main
 
-import "fmt"
-import "github.com/go-resty/resty/v2"
-import "encoding/csv"
-import "strings"
+import (
+	"fmt"
+	"github.com/go-resty/resty/v2"
+	"encoding/csv"
+	"os"
+	"log"
+)
 
 func main() {
 	client := resty.New()
-	//csv_file_path := "./goodreads_library_export.csv"
+	csv_file_path := "./goodreads_library_export.csv"
 
-	in := `first_name,last_name,username
-"Rob","Pike",rob
-Ken,Thompson,ken
-"Robert","Griesemer","gri"
-`
-	r := csv.NewReader(strings.NewReader(in))
+	f, err := os.Open(csv_file_path)
+	if err != nil {
+        log.Fatal("Unable to read input file " + filePath, err)
+    }
+    defer f.Close()
 
-	fmt.Println(r)
+	r := csv.NewReader(f)
+	records, err := csvReader.ReadAll()
+    if err != nil {
+        log.Fatal("Unable to parse file as CSV for " + filePath, err)
+    }
+
+	fmt.Println(records)
+
 	resp, err := client.R().
 		EnableTrace().
 		Get("https://httpbin.org/get")
