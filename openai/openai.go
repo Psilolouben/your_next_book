@@ -31,7 +31,7 @@ type Choice struct {
 }
 
 func AskChatGpt(books string){
-	apiKey := os.Getenv("OPEN_AI_KEY") //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
+	apiKey := os.Getenv("OPEN_AI_KEY")
 
 	url := "https://api.openai.com/v1/chat/completions"
 
