@@ -44,7 +44,14 @@ func AskChatGpt(books string){
 		Model: "gpt-4", // Change to "gpt-3.5-turbo" if needed
 		Messages: []ChatMessage{
 			{Role: "system", Content: "You are an assistant with deep book reading knowledge."},
-			{Role: "user", Content: "I want you to suggest 8 books that you believe I would like based on the following titles" + books + ". Please provide the Greek titles if any"},
+			{
+				Role: "user", 
+				Content: `I want you to suggest 8 books that you believe 
+				I would like based on the following titles` + books + 
+				`. Please provide the Greek titles if any, but ONLY if you have
+				crosschecked that it indeed exists, else return the english title.
+				Please explain in very brief words why a book is recommended.`,
+			},
 		},
 		MaxTokens:   1000,
 		Temperature: 0.7,
