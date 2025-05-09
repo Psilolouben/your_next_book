@@ -31,7 +31,7 @@ type Choice struct {
 }
 
 func AskChatGpt(books string){
-	apiKey := os.Getenv("OPEN_AI_KEY") //sk-iAPMrIW5JNGREsIZsjbWQzDMeNxy29WG6UloDvP64BT3BlbkFJOLuGBk8gbUTHVRwhjjo-XOKsUzBvamh2Tp7dIIlSsA
+	apiKey := os.Getenv("OPEN_AI_KEY") //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
 
 	url := "https://api.openai.com/v1/chat/completions"
 
@@ -43,8 +43,8 @@ func AskChatGpt(books string){
 	requestBody := ChatRequest{
 		Model: "gpt-4", // Change to "gpt-3.5-turbo" if needed
 		Messages: []ChatMessage{
-			{Role: "system", Content: "You are a helpful assistant."},
-			{Role: "user", Content: "Can you suggest 5 books similar to the following"+books},
+			{Role: "system", Content: "You are an assistant with deep book reading knowledge."},
+			{Role: "user", Content: "I want you to suggest 8 books that you believe I would like based on the following titles" + books + ". Please provide the Greek titles if any"},
 		},
 		MaxTokens:   1000,
 		Temperature: 0.7,
