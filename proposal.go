@@ -7,24 +7,34 @@ import (
 	"strings"
 	"sort"
 	"strconv"
+	"book_proposals/models"
 	"marky/openai"
+	//"fmt"
 )
 
-func sortBooksByRating(bks map[string]int)(arr []string){
-	arr = make([]string, 0, len(bks))
-	for key := range bks {
+func sortBooksByRating(bks []book_proposals.Book)(barr []book_proposals.Book){
+	var arr []book_proposals.Book
+	
+	for _, key := range bks {
 		arr = append(arr, key)
 	}
 
-	sort.Slice(arr, func(i, j int) bool { return bks[arr[i]] > bks[arr[j]] })
+	sort.Slice(arr, func(i, j int) bool { return arr[i].Rating > arr[j].Rating })
 	return arr
 }
 
-func filteredByShelfAndRating(books [][]string, shelfName string)(bks map[string]int){
-	bks = make(map[string]int)
-	for _, bk := range books {
+func filteredByShelfAndRating(sheet_books [][]string, shelfName string)(books []book_proposals.Book){
+	var bks []book_proposals.Book
+	for _, bk := range sheet_books {
 		if (strings.Contains(bk[18], shelfName) && (bk[7] == "5")) {
-			bks[bk[1]], _ = strconv.Atoi(bk[7])
+			book_rating, _ := strconv.Atoi(bk[7])
+			bks = append(bks,
+				book_proposals.Book{
+					Rating: book_rating, 
+					Author: bk[2], 
+					Title: bk[1],
+				},
+			)
 		}
 	}
 	return bks
@@ -46,6 +56,16 @@ func csvData(filePath string)(records [][]string) {
 	return
 }
 
+func constructPromptBookTitles(books []book_proposals.Book)(book_str string) {
+	var bks string
+
+	for _, b := range books {
+		bks = bks + b.Title + " by " + b.Author + ","
+	}
+
+	return bks
+}
+
 func main() {
 	r := csvData("./goodreads_library_export.csv")
 
@@ -53,7 +73,8 @@ func main() {
 
 	rMapArr := sortBooksByRating(rMap)
 
-	topBooksStr := strings.Join(rMapArr[:], ",")
-	//fmt.Printf(topBooksStr)
+	topBooksStr := constructPromptBookTitles(rMapArr)
+
+	//fmt.Println(topBooksStr)
 	openai.AskChatGpt(topBooksStr)
 }
