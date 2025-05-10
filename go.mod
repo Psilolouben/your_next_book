@@ -7,6 +7,9 @@ require (
 	marky/openai v0.0.0-00010101000000-000000000000
 )
 
-require golang.org/x/net v0.29.0 // indirect
+require (
+	github.com/joho/godotenv v1.5.1 // indirect
+	golang.org/x/net v0.29.0 // indirect
+)
 
 replace marky/openai => ./openai

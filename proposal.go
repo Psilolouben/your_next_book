@@ -9,12 +9,13 @@ import (
 	"strconv"
 	"book_proposals/models"
 	"marky/openai"
+	"github.com/joho/godotenv"
 	//"fmt"
 )
 
 func sortBooksByRating(bks []book_proposals.Book)(barr []book_proposals.Book){
 	var arr []book_proposals.Book
-	
+
 	for _, key := range bks {
 		arr = append(arr, key)
 	}
@@ -30,8 +31,8 @@ func filteredByShelfAndRating(sheet_books [][]string, shelfName string)(books []
 			book_rating, _ := strconv.Atoi(bk[7])
 			bks = append(bks,
 				book_proposals.Book{
-					Rating: book_rating, 
-					Author: bk[2], 
+					Rating: book_rating,
+					Author: bk[2],
 					Title: bk[1],
 				},
 			)
@@ -67,6 +68,11 @@ func constructPromptBookTitles(books []book_proposals.Book)(book_str string) {
 }
 
 func main() {
+	err := godotenv.Load()
+    if err != nil {
+        log.Fatalf("Error loading .env file")
+    }
+
 	r := csvData("./goodreads_library_export.csv")
 
 	rMap := filteredByShelfAndRating(r, "read")
