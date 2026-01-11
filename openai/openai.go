@@ -45,11 +45,11 @@ func AskChatGpt(books string){
 		Messages: []ChatMessage{
 			{Role: "system", Content: "You are an assistant with deep book reading knowledge."},
 			{
-				Role: "user", 
-				Content: `I want you to suggest 8 books that you believe 
-				I would like based on the following titles` + books + 
-				`. Please provide the Greek titles if any, but ONLY if you have
-				crosschecked that it indeed exists, else return the english title.
+				Role: "user",
+				Content: `I want you to suggest 8 books that you believe
+				I would like based on the following book titles` + books +
+				`. Please provide the titles if any, but be aware that some of the books in the list are in Greek so make
+				sure you don't recommend a book that already exists in the list but under its Greek title.
 				Please explain in very brief words why a book is recommended.`,
 			},
 		},
