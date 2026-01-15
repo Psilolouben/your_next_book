@@ -43,18 +43,55 @@ func AskChatGpt(books string){
 	requestBody := ChatRequest{
 		Model: "gpt-4", // Change to "gpt-3.5-turbo" if needed
 		Messages: []ChatMessage{
-			{Role: "system", Content: "You are an assistant with deep book reading knowledge."},
+			{Role: "system", Content: "You are a literary recommendation engine with expert knowledge of books, genres, literary movements, and reader co-reading patterns. You strictly follow scoring rules, exclusion rules, and output format requirements."},
 			{
 				Role: "user",
 				Content: `I want you to suggest 8 books that you believe
-				I would like based on the following book titles` + books +
-				`. Please provide the titles if any, but be aware that some of the books in the list are in Greek so make
-				sure you don't recommend a book that already exists in the list but under its Greek title.
-				Please explain in very brief words why a book is recommended.`,
+				I would like based on the book titles of my top rated books
+				in the following section which are featured in a {title} by {author} format. The list is this` + books +
+				`. Do not recommend books based solely based on the authors I seem to like but on what people who have similar taste as I do usually read as well.
+				Books that match more than one of my top rated books at the same time should be considered higher recommended and should have higher priority.
+				Here are some examples:
+				- A person has read Hobbit and two of the Lord of the rings books so it the third Lord of the Rings book matches with 3 of Tolkien's books. This would be high priority.
+				- A person has read some Hegel's books and Hegel is notorious for his clash with Kierkegaard, thus many people who read Hegel read some Kierkegaard as well. Kierkegaard should be recommended.
+				- A person loves The Road by MacCarthy and The Passage by Justin Cronin. He seems to like post apocalyptic books so these books should be recommended as well.
+				- A person has read a book by Stephen King. He would likely like another book by Stephen King but from all the above this would be lowest in priority.
+
+				Each recommended book is represented by an object with the following keys:
+					- Recommended Book Title,
+					- Author,
+					- Reason of recommendation,
+					- Calculated Score
+
+				Calculated Score is calculated with the following scoring system:
+				- +3 points: strong thematic or genre overlap with TWO OR MORE favorite books
+				- +2 points: commonly co-read by readers with similar taste
+				- +1 point: same author as a favorite book
+
+				The "Reason of recommendation" field MUST explicitly list:
+				- Genres or themes and how many favorite books they match
+				- Reader behavior (co-read patterns), if applicable
+				- Author overlap ONLY if applicable
+
+				Each reason must reference the scoring criteria used.
+				For example "Genres: noir, crime, drama matching with X of your favorite books, Author: Y books of Manchette already in your favorites list"
+
+				Exclusion rules:
+				- If a book already appears in the input list, DO NOT include it in the results.
+
+				Output requirements:
+				- Return ONLY valid JSON
+				- The top-level JSON value MUST be an array
+				- Each element of the array MUST be a JSON object (hash/map) with the keys described above
+				- Each object MUST use the same keys
+				- Do NOT wrap the array in another object
+				- Do NOT number the items
+				- Do NOT include any text outside the JSON
+				After gathering the recommended books and return the json with all the books with a calculated score greater than 3.`,
 			},
 		},
 		MaxTokens:   1000,
-		Temperature: 0.7,
+		Temperature: 0.5,
 	}
 
 	// Send the POST request
