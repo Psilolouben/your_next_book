@@ -64,8 +64,8 @@ func AskChatGpt(books string){
 					- Calculated Score
 
 				Calculated Score is calculated with the following scoring system:
-				- +3 points: strong thematic or genre overlap with TWO OR MORE favorite books
-				- +2 points: commonly co-read by readers with similar taste
+				- +4 points: strong thematic or genre overlap with TWO OR MORE favorite books
+				- +3 points: commonly co-read by readers with similar taste
 				- +1 point: same author as a favorite book
 
 				The "Reason of recommendation" field MUST explicitly list:
@@ -87,7 +87,8 @@ func AskChatGpt(books string){
 				- Do NOT wrap the array in another object
 				- Do NOT number the items
 				- Do NOT include any text outside the JSON
-				After gathering the recommended books and return the json with all the books with a calculated score greater than 3.`,
+				After gathering the recommended books and return the json with the top 10 books with the highest calculated scores in
+				descending order of calculated score`,
 			},
 		},
 		MaxTokens:   1000,
