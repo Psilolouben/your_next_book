@@ -4,42 +4,18 @@ import (
 	"encoding/csv"
 	"os"
 	"log"
-	"strings"
-	"sort"
 	"strconv"
 	"book_proposals/models"
-	"marky/openai"
+  "context"
 	"github.com/joho/godotenv"
-	//"fmt"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-func sortBooksByRating(bks []book_proposals.Book)(barr []book_proposals.Book){
-	var arr []book_proposals.Book
-
-	for _, key := range bks {
-		arr = append(arr, key)
-	}
-
-	sort.Slice(arr, func(i, j int) bool { return arr[i].Rating > arr[j].Rating })
-	return arr
+type Output struct {
+	Books []book_proposals.Book `json:"books"`
 }
 
-func filteredByShelfAndRating(sheet_books [][]string, shelfName string)(books []book_proposals.Book){
-	var bks []book_proposals.Book
-	for _, bk := range sheet_books {
-		if (strings.Contains(bk[18], shelfName) && (bk[7] == "5")) {
-			book_rating, _ := strconv.Atoi(bk[7])
-			bks = append(bks,
-				book_proposals.Book{
-					Rating: book_rating,
-					Author: bk[2],
-					Title: bk[1],
-				},
-			)
-		}
-	}
-	return bks
-}
+type Input struct{}  // empty input
 
 func csvData(filePath string)(records [][]string) {
 	f, err := os.Open(filePath)
@@ -57,30 +33,52 @@ func csvData(filePath string)(records [][]string) {
 	return
 }
 
-func constructPromptBookTitles(books []book_proposals.Book)(book_str string) {
-	var bks string
+func fetchBooksList(
+	ctx context.Context,
+	req *mcp.CallToolRequest,
+	input Input,
+) (*mcp.CallToolResult,
+	Output,
+	error,) {
 
-	for _, b := range books {
-		bks = bks + b.Title + " by " + b.Author + ","
+	bks,_ := LoadBooksFromCSV("./goodreads_library_export.csv")
+	return nil, Output{Books: bks}, nil
+}
+
+func LoadBooksFromCSV(path string) ([]book_proposals.Book, error) {
+	bookList := csvData(path)
+
+	var bks []book_proposals.Book
+	for _, bk := range bookList {
+		rating, err := strconv.Atoi(bk[7])
+		if err != nil {
+			continue
+		}
+
+		bks = append(bks, book_proposals.Book{
+			Rating: rating,
+			Author: bk[2],
+			Title:  bk[1],
+		})
 	}
 
-	return bks
+	return bks, nil
 }
 
 func main() {
+	// Create a server with a single tool.
+	server := mcp.NewServer(&mcp.Implementation{Name: "booklist", Version: "v1.0.0"}, nil)
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "fetch_books_list",
+		Description: "Returns all books from the Goodreads CSV",
+	}, fetchBooksList)
+	// Run the server over stdin/stdout, until the client disconnects.
+	if err := server.Run(context.Background(), &mcp.StdioTransport{}); err != nil {
+		log.Fatal(err)
+	}
+
 	err := godotenv.Load()
     if err != nil {
         log.Fatalf("Error loading .env file")
     }
-
-	r := csvData("./goodreads_library_export.csv")
-
-	rMap := filteredByShelfAndRating(r, "read")
-
-	rMapArr := sortBooksByRating(rMap)
-
-	topBooksStr := constructPromptBookTitles(rMapArr)
-
-	//fmt.Println(topBooksStr)
-	openai.AskChatGpt(topBooksStr)
 }

@@ -47,9 +47,8 @@ func AskChatGpt(books string){
 			{
 				Role: "user",
 				Content: `I want you to suggest 8 books that you believe
-				I would like based on the book titles of my top rated books
-				in the following section which are featured in a {title} by {author} format. The list is this` + books +
-				`. Do not recommend books based solely based on the authors I seem to like but on what people who have similar taste as I do usually read as well.
+				I would like based on the book titles of my top rated books on Goodreads. Do not recommend books based solely based on the authors I seem to like but on what people who have similar taste as I do usually read as well.
+				Do not recommend books that are on my "read" list either.
 				Books that match more than one of my top rated books at the same time should be considered higher recommended and should have higher priority.
 				Here are some examples:
 				- A person has read Hobbit and two of the Lord of the rings books so it the third Lord of the Rings book matches with 3 of Tolkien's books. This would be high priority.
@@ -64,7 +63,7 @@ func AskChatGpt(books string){
 					- Calculated Score
 
 				Calculated Score is calculated with the following scoring system:
-				- +4 points: strong thematic or genre overlap with TWO OR MORE favorite books
+				- +5 points: strong thematic or genre overlap with TWO OR MORE favorite books
 				- +3 points: commonly co-read by readers with similar taste
 				- +1 point: same author as a favorite book
 
