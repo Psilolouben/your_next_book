@@ -11,6 +11,7 @@ import (
 	"github.com/chromedp/chromedp"
 )
 
+
 const exportURL = "https://www.goodreads.com/review/import"
 
 func profileDir() string {
@@ -60,22 +61,42 @@ func FetchExport(csvPath string) error {
 		return fmt.Errorf("login timed out (still at %s)", pageURL)
 	}
 
-	// Show a banner. If the export link is already present we skip straight to
-	// downloading; otherwise the user needs to click Export Library first.
+	// Inject a banner we can update throughout the flow.
 	chromedp.Run(ctx, chromedp.Evaluate(`
 		var b = document.createElement('div');
-		b.innerText = '👉 Click "Export Library" to request a fresh export. If the download link is already visible, just click it.';
+		b.id = 'gr-export-banner';
 		b.style = 'position:fixed;top:0;left:0;right:0;background:#ffe;color:#333;font-size:16px;padding:12px 16px;z-index:99999;border-bottom:2px solid #f90;text-align:center;';
 		document.body.prepend(b);
 	`, nil))
 
-	// Wait up to 5 minutes for the download link to appear.
-	fmt.Fprintln(os.Stderr, "Waiting for download link...")
+	chromedp.Run(ctx, chromedp.Evaluate(`document.getElementById('gr-export-banner').innerText = '👉 Click "Export Library" to generate a fresh export, then wait here.';`, nil))
+	fmt.Fprintln(os.Stderr, "Waiting for user to click Export Library...")
+
+	// Give the page's JS up to 5 seconds to render any existing export link.
+	// If one appears, it's stale — wait for it to disappear (user clicked Export),
+	// then wait for the fresh one. If nothing appears within 5s, the page is clean
+	// and we just wait for the new link.
+	probeCtx, probeCancel := context.WithTimeout(ctx, 5*time.Second)
+	defer probeCancel()
+	existingLinkFound := chromedp.Run(probeCtx, chromedp.WaitVisible(`a[href*="goodreads_export"]`, chromedp.ByQuery)) == nil
+
+	if existingLinkFound {
+		fmt.Fprintln(os.Stderr, "Existing export link found — waiting for user to replace it...")
+		staleCtx, staleCancel := context.WithTimeout(ctx, 5*time.Minute)
+		defer staleCancel()
+		chromedp.Run(staleCtx, chromedp.WaitNotPresent(`a[href*="goodreads_export"]`, chromedp.ByQuery))
+	}
+
+	chromedp.Run(ctx, chromedp.Evaluate(`document.getElementById('gr-export-banner').innerText = '⏳ Waiting for your export to be ready...';`, nil))
+
+	// Wait up to 5 minutes for the fresh download link to appear.
+	fmt.Fprintln(os.Stderr, "Waiting for fresh download link...")
 	waitCtx, waitCancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer waitCancel()
 	if err := chromedp.Run(waitCtx, chromedp.WaitVisible(`a[href*="goodreads_export"]`, chromedp.ByQuery)); err != nil {
 		return fmt.Errorf("download link did not appear within 5 minutes")
 	}
+	chromedp.Run(ctx, chromedp.Evaluate(`document.getElementById('gr-export-banner').innerText = '⬇️ Downloading your export...';`, nil))
 
 	// Snapshot ~/Downloads before clicking so we can identify the new file.
 	home, _ := os.UserHomeDir()
@@ -87,8 +108,17 @@ func FetchExport(csvPath string) error {
 		}
 	}
 
-	if err := chromedp.Run(ctx, chromedp.Click(`a[href*="goodreads_export"]`, chromedp.ByQuery)); err != nil {
-		return fmt.Errorf("failed to click download link: %w", err)
+	// Get the href and fetch it directly via the browser to avoid navigation issues.
+	var downloadHref string
+	if err := chromedp.Run(ctx, chromedp.Evaluate(`(function(){ var a = document.querySelector('a[href*="goodreads_export"]'); return a ? a.href : ''; })()`, &downloadHref)); err != nil || downloadHref == "" {
+		return fmt.Errorf("could not read download link href")
+	}
+	fmt.Fprintf(os.Stderr, "Download URL: %s\n", downloadHref)
+
+	// Navigate to the download URL directly — more reliable than clicking.
+	if err := chromedp.Run(ctx, chromedp.Navigate(downloadHref)); err != nil {
+		// Navigation "fails" when the browser downloads instead of navigating — this is expected.
+		fmt.Fprintf(os.Stderr, "Navigate returned (expected for file downloads): %v\n", err)
 	}
 
 	// Wait for the CSV to land in ~/Downloads.
