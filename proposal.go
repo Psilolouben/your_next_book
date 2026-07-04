@@ -61,16 +61,16 @@ func LoadBooksFromCSV(path string) ([]book_proposals.Book, error) {
 
 	var bks []book_proposals.Book
 	for _, bk := range bookList {
-		rating, err := strconv.Atoi(bk[7])
+		rating, err := strconv.ParseFloat(bk[7], 64)
 		if err != nil {
 			continue
 		}
 
 		bks = append(bks, book_proposals.Book{
-			Rating:        rating,
+			Rating:        int(rating),
 			Author:        bk[2],
 			Title:         bk[1],
-			Status:        bk[18],
+			Status:        bk[17],
 			YearPublished: bk[12],
 			Shelves:       bk[15],
 		})
