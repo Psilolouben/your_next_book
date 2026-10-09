@@ -67,7 +67,7 @@ func LoadBooksFromCSV(path string) ([]book_proposals.Book, error) {
 		}
 
 		bks = append(bks, book_proposals.Book{
-			Rating:        int(rating),
+			Rating:        rating,
 			Author:        bk[2],
 			Title:         bk[1],
 			Status:        bk[17],
